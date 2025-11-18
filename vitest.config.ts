@@ -23,5 +23,13 @@ export default defineConfig({
         functions: 60
       }
     }
-  }
+  },
+  resolve: {
+    alias: [
+      {
+        find: /\.(jpeg|jpg|png|gif|webp|svg)$/,
+        replacement: join(__dirname, 'src/fileMock.js'),
+      },
+    ],
+  },
 });
