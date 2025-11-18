@@ -1,0 +1,21 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "dist",
+      "numberOfRuns": 1,
+      "url": ["http://localhost:3000"],
+      "startServerCommand": "npm run dev"
+    },
+    "assert": {
+      "assertions": {
+        "performance": ["error", {"minScore": 0.85}],
+        "accessibility": ["warn", {"minScore": 0.9}],
+        "best-practices": ["warn", {"minScore": 0.9}],
+        "seo": ["warn", {"minScore": 0.85}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 3000}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}]
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Voice Agent Backend Test</h2>
+    <button onclick="connect()">1. Connect</button>
+    <button onclick="sendAudio()">2. Send 'Audio'</button>
+    <div id="status" style="margin-top:20px; font-family:monospace;">Status: Disconnected 🔴</div>
+
+    <script>
+        let ws;
+        function connect() {
+            ws = new WebSocket("ws://localhost:8000/ws/audio");
+            ws.onopen = () => {
+                document.getElementById("status").innerText = "Status: Connected ✅";
+                document.getElementById("status").style.color = "green";
+            };
+            ws.onmessage = (event) => {
+                document.getElementById("status").innerText += "\nServer says: " + event.data;
+            };
+            ws.onclose = () => {
+                document.getElementById("status").innerText = "Status: Disconnected 🔴";
+                document.getElementById("status").style.color = "red";
+            };
+        }
+        function sendAudio() {
+            if(ws) ws.send(new Uint8Array([1, 2, 3])); // Fake audio bytes
+        }
+    </script>
+</body>
+</html>

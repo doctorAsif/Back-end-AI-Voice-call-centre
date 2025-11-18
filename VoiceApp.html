@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Consultant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        #chat-log { scroll-behavior: smooth; }
+        .orb {
+            box-shadow: 0 0 20px 0px var(--color), 0 0 40px 0px var(--color), 0 0 80px 0px var(--color);
+            transition: all 0.3s ease;
+        }
+        .orb.listening { --color: #ef4444; animation: pulse 1.5s infinite; }
+        .orb.speaking { --color: #10b981; animation: speak 0.4s infinite alternate; }
+        .orb.idle { --color: #3b82f6; }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        @keyframes speak {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+
+    <div class="w-1/3 bg-white p-8 flex flex-col justify-between shadow-2xl">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">AI Voice Consultant</h1>
+            <p class="text-gray-500 mt-2">Multilingual Assistant (English, Bangla, Arabic)</p>
+        </div>
+        
+        <div class="flex flex-col items-center">
+            <div id="orb" class="orb idle w-32 h-32 rounded-full bg-blue-500"></div>
+            <div id="status" class="mt-6 text-gray-600 font-medium">Status: Ready</div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <button id="startBtn" onclick="startSession()" class="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition-all transform hover:scale-105">
+                Start Call
+            </button>
+            <button id="stopBtn" onclick="stopSession()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-all">
+                End Call
+            </button>
+        </div>
+    </div>
+
+    <div class="w-2/3 flex flex-col bg-gray-50 h-screen">
+        <div id="chat-log" class="flex-1 p-6 overflow-y-auto space-y-4">
+            <div class="p-4 bg-white rounded-lg shadow max-w-lg">
+                <p class="font-bold text-blue-600">AI Assistant</p>
+                <p class="text-gray-700">Hello! Click "Start Call" to speak. I can answer questions about visas, IT companies, and your uploaded PDFs.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let mediaRecorder;
+        let audioContext;
+
+        const orb = document.getElementById("orb");
+        const statusEl = document.getElementById("status");
+        const chatLog = document.getElementById("chat-log");
+        const startBtn = document.getElementById("startBtn");
+
+        function addMessage(text, sender) {
+            const isUser = sender === "user";
+            const msgDiv = document.createElement("div");
+            msgDiv.className = isUser 
+                ? "p-4 rounded-lg shadow max-w-lg bg-blue-600 text-white ml-auto" 
+                : "p-4 rounded-lg shadow max-w-lg bg-white";
+            
+            const title = document.createElement("p");
+            title.className = isUser ? "font-bold text-blue-200" : "font-bold text-blue-600";
+            title.innerText = isUser ? "You" : "AI Assistant";
+            
+            const content = document.createElement("p");
+            content.className = isUser ? "text-white" : "text-gray-700";
+            content.innerText = text;
+
+            msgDiv.appendChild(title);
+            msgDiv.appendChild(content);
+            chatLog.appendChild(msgDiv);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        async function startSession() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === "suspended") await audioContext.resume();
+            
+            statusEl.innerText = "Connecting...";
+            startBtn.disabled = true;
+            orb.className = "orb idle";
+
+            ws = new WebSocket("ws://localhost:8000/ws/audio");
+            ws.binaryType = "arraybuffer";
+            
+            ws.onopen = async () => {
+                statusEl.innerText = "Listening...";
+                orb.className = "orb listening";
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    let mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                    
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0 && ws.readyState === 1) ws.send(e.data);
+                    };
+                    mediaRecorder.start(250); 
+                } catch (err) {
+                    addMessage("Microphone Error: " + err.message, "ai");
+                    statusEl.innerText = "Mic Error";
+                }
+            };
+
+            ws.onmessage = async (event) => {
+                if (typeof event.data === "string") {
+                    const data = JSON.parse(event.data);
+                    addMessage(data.content, "ai");
+                } else {
+                    await playAudio(event.data);
+                }
+            };
+            
+            ws.onclose = () => {
+                statusEl.innerText = "Disconnected (Server might be loading)";
+                orb.className = "orb idle";
+                startBtn.disabled = false;
+            };
+        }
+
+        async function playAudio(arrayBuffer) {
+            try {
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                
+                orb.className = "orb speaking";
+                statusEl.innerText = "Speaking...";
+                
+                source.start(0);
+                
+                source.onended = () => {
+                    orb.className = "orb listening";
+                    statusEl.innerText = "Listening...";
+                };
+            } catch (e) {
+                console.error("Audio Decode Error", e);
+                orb.className = "orb listening";
+            }
+        }
+
+        function stopSession() {
+            if (mediaRecorder) mediaRecorder.stop();
+            if (ws) ws.close();
+            statusEl.innerText = "Stopped";
+        }
+    </script>
+</body>
+</html>

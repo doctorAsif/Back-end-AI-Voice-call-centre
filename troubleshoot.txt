@@ -1,0 +1,6 @@
+Troubleshooting Plan:
+1. Understand the application's architecture and entry points.
+2. Examine the frontend code to see how voice input is handled.
+3. Investigate the backend code to understand how voice data is processed.
+4. Check for any obvious errors or misconfigurations in the code.
+5. Look for logs or other debugging information.

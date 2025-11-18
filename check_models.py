@@ -1,0 +1,25 @@
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("GOOGLE_API_KEY")
+
+if not api_key:
+    print("❌ ERROR: GOOGLE_API_KEY not found in .env file.")
+else:
+    genai.configure(api_key=api_key)
+    print(f"✅ Checking key: {api_key[:10]}...")
+    try:
+        print("\n🧠 Available Embedding Models ('embedContent'):")
+        found_models = False
+        for m in genai.list_models():
+            if 'embedContent' in m.supported_generation_methods:
+                print(f" - {m.name}")
+                found_models = True
+        
+        if not found_models:
+            print("   (No embedding models found for this key)")
+
+    except Exception as e:
+        print(f"\n❌ ERROR: {e}")

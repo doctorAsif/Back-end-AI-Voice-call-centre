@@ -1,0 +1,5 @@
+{
+  "name": "AI Voice Agent Architecture",
+  "description": "An interactive visualization of the components and data flow in an AI-powered voice agent system, from the initial phone call to the final response.",
+  "requestFramePermissions": []
+}
