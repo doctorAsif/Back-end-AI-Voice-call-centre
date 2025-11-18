@@ -7,6 +7,20 @@ const VoiceApp: React.FC = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [userMessage, setUserMessage] = useState('');
   const [aiMessage, setAiMessage] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  const handleSendToWhatsApp = () => {
+    fetch('/whatsapp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: phoneNumber,
+        body: `User: ${userMessage}\nAI: ${aiMessage}`,
+      }),
+    });
+  };
 
   const handleToggleRecording = () => {
     if (isRecording) {
@@ -36,6 +50,8 @@ const VoiceApp: React.FC = () => {
             const data = JSON.parse(event.data);
             if (data.type === 'text') {
               setAiMessage(data.content);
+            } else if (data.type === 'user_text') {
+              setUserMessage(data.content);
             }
           };
 
@@ -59,6 +75,21 @@ const VoiceApp: React.FC = () => {
       <div className="mt-4">
         <p><strong>You:</strong> {userMessage}</p>
         <p><strong>AI:</strong> {aiMessage}</p>
+      </div>
+      <div className="mt-4">
+        <input
+          type="text"
+          value={phoneNumber}
+          onChange={e => setPhoneNumber(e.target.value)}
+          placeholder="Enter phone number"
+          className="px-4 py-2 border rounded"
+        />
+        <button
+          onClick={handleSendToWhatsApp}
+          className="px-4 py-2 ml-2 rounded bg-blue-500 text-white"
+        >
+          Send to WhatsApp
+        </button>
       </div>
     </div>
   );

@@ -9,10 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import google.generativeai as genai
 from backend.knowledge import load_knowledge_base
+from twilio.rest import Client
+from pydantic import BaseModel
 
 load_dotenv()
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
 
 try:
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -82,6 +87,7 @@ async def audio_websocket(websocket: WebSocket):
 
 async def process_llm_response(websocket: WebSocket, user_text: str, lang_code: str):
     print(f"🎤 User ({lang_code}): {user_text}")
+    await websocket.send_text(json.dumps({"type": "user_text", "content": user_text}))
     CONVERSATION_HISTORY.append(f"User: {user_text}")
     
     try:
@@ -126,3 +132,21 @@ async def process_llm_response(websocket: WebSocket, user_text: str, lang_code: 
         
     except Exception as e:
         print(f"❌ Processing Error: {e}")
+
+class WhatsappMessage(BaseModel):
+    to: str
+    body: str
+
+@app.post("/whatsapp")
+async def send_whatsapp_message(message: WhatsappMessage):
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        message = client.messages.create(
+            from_=f'whatsapp:{TWILIO_FROM_NUMBER}',
+            body=message.body,
+            to=f'whatsapp:{message.to}'
+        )
+        return {"status": "success", "sid": message.sid}
+    except Exception as e:
+        print(f"❌ WhatsApp Error: {e}")
+        return {"status": "error", "message": str(e)}
