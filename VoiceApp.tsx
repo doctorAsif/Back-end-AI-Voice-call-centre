@@ -63,34 +63,38 @@ const VoiceApp: React.FC = () => {
     }
   };
 
+  const isWhatsAppEnabled = import.meta.env.VITE_WHATSAPP_ENABLED === 'true';
+
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Voice AI</h2>
+    <div className="p-6 bg-white rounded-lg shadow-md text-gray-800">
+      <h2 className="text-2xl font-bold mb-4 text-teal-600">Voice AI</h2>
       <button
         onClick={handleToggleRecording}
-        className={`px-4 py-2 rounded-full ${isRecording ? 'bg-red-500' : 'bg-green-500'} text-white`}
+        className={`px-4 py-2 rounded-full ${isRecording ? 'bg-red-500' : 'bg-teal-500'} text-white`}
       >
         {isRecording ? 'Stop Recording' : 'Start Recording'}
       </button>
-      <div className="mt-4">
+      <div className="mt-4 p-4 bg-gray-100 rounded">
         <p><strong>You:</strong> {userMessage}</p>
         <p><strong>AI:</strong> {aiMessage}</p>
       </div>
-      <div className="mt-4">
-        <input
-          type="text"
-          value={phoneNumber}
-          onChange={e => setPhoneNumber(e.target.value)}
-          placeholder="Enter phone number"
-          className="px-4 py-2 border rounded"
-        />
-        <button
-          onClick={handleSendToWhatsApp}
-          className="px-4 py-2 ml-2 rounded bg-blue-500 text-white"
-        >
-          Send to WhatsApp
-        </button>
-      </div>
+      {isWhatsAppEnabled && (
+        <div className="mt-4">
+          <input
+            type="text"
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
+            placeholder="Enter phone number"
+            className="px-4 py-2 border rounded"
+          />
+          <button
+            onClick={handleSendToWhatsApp}
+            className="px-4 py-2 ml-2 rounded bg-teal-500 text-white"
+          >
+            Send to WhatsApp
+          </button>
+        </div>
+      )}
     </div>
   );
 };
