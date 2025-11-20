@@ -26,11 +26,13 @@ const Connector: React.FC<{
 const SystemDiagram: React.FC<SystemDiagramProps> = ({ activeStep, onComponentClick }) => {
 
   const activeComponents = useMemo(() => {
-    return activeStep !== null ? SIMULATION_STEPS[activeStep].activeComponents : [];
+    if (activeStep === null) return [];
+    return SIMULATION_STEPS[activeStep]?.activeComponents || [];
   }, [activeStep]);
 
   const activeConnectors = useMemo(() => {
-    return activeStep !== null ? SIMULATION_STEPS[activeStep].activeConnectors : [];
+    if (activeStep === null) return [];
+    return SIMULATION_STEPS[activeStep]?.activeConnectors || [];
   }, [activeStep]);
 
   return (

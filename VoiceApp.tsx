@@ -34,7 +34,9 @@ const VoiceApp: React.FC = () => {
 
           newSocket.onmessage = event => {
             const data = JSON.parse(event.data);
-            if (data.type === 'text') {
+            if (data.type === 'user_text') {
+              setUserMessage(data.content);
+            } else if (data.type === 'text') {
               setAiMessage(data.content);
             }
           };
