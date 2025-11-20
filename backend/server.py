@@ -82,6 +82,7 @@ async def audio_websocket(websocket: WebSocket):
 
 async def process_llm_response(websocket: WebSocket, user_text: str, lang_code: str):
     print(f"🎤 User ({lang_code}): {user_text}")
+    await websocket.send_text(json.dumps({"type": "user_text", "content": user_text}))
     CONVERSATION_HISTORY.append(f"User: {user_text}")
     
     try:
